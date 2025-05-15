@@ -1,0 +1,82 @@
+version: '3'
+services:
+  postgres:
+    image: postgres:latest
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=BusTicketDocker
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=busticket123
+    ports:
+      - 8000:5432
+    networks:
+      - busticketnet
+
+  rabbitMQ:
+    image: rabbitmq:3-management
+    container_name: 'rabbitmqcontainer'
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    ports:
+      - 5672:5672
+    expose:
+      - 5672
+    networks:
+      - busticketnet
+
+  rabbitmq-service:
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: BusTicket.Subscriber\Dockerfile
+    environment:
+      - RABBITMQ_HOST=rabbitMQ
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USERNAME=guest
+      - RABBITMQ_PASSWORD=guest
+      - SMTP_SERVER=smtp.gmail.com
+      - SMTP_PORT=587
+      - SMTP_USERNAME=zahirovic2019@gmail.com
+      - SMTP_PASSWORD=exhi eova akph ghfa
+      - ENABLE_SSL=true
+      - MAIL_TIMEOUT=10000
+      - MAIL_FROM_ADDRESS=no-replay@busticket.ba
+      - MAIL_DISPLAY_NAME=busticket.ba
+    depends_on:
+      - rabbitMQ
+      - postgres
+    networks:
+      - busticketnet
+
+  api:
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: BusTicket.Api\Dockerfile
+    environment:
+      - ConnectionStrings_Main=Host=postgres;Port=5432;Database=BusTicketDocker;Username=postgres;Password=busticket123;Pooling=true
+      - RABBITMQ_HOST=rabbitMQ
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USERNAME=guest
+      - RABBITMQ_PASSWORD=guest
+      - SMTP_SERVER=smtp.gmail.com
+      - SMTP_PORT=587
+      - SMTP_USERNAME=zahirovic2019@gmail.com
+      - SMTP_PASSWORD=exhi eova akph ghfa
+      - ENABLE_SSL=true
+      - MAIL_TIMEOUT=10000
+      - MAIL_FROM_ADDRESS=no-replay@busticket.ba
+      - MAIL_DISPLAY_NAME=busticket.ba
+    ports:
+      - 8080:80
+    volumes:
+      - ./wwwroot:/app/wwwroot
+    networks:
+      - busticketnet
+    depends_on:
+      - postgres
+
+networks:
+  busticketnet:
+    driver: bridge

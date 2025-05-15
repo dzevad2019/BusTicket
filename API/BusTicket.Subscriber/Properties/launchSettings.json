@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "BusTicket.Subscriber": {
+      "commandName": "Project"
+    },
+    "Docker": {
+      "commandName": "Docker"
+    }
+  }
+}
