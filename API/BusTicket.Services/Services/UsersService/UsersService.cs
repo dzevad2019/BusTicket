@@ -47,7 +47,13 @@ namespace BusTicket.Services
         public override async Task<PagedList<UserModel>> GetPagedAsync(UsersSearchObject searchObject, CancellationToken cancellationToken = default)
         {
             var pagedList = await DbSet.Include(x => x.UserRoles)
-                .Where(x => string.IsNullOrEmpty(searchObject.SearchFilter) || x.UserName.ToLower().Contains(searchObject.SearchFilter.ToLower()))
+                .Where(x => 
+                    string.IsNullOrEmpty(searchObject.SearchFilter) 
+                    || x.UserName.ToLower().Contains(searchObject.SearchFilter.ToLower())
+                    || x.FirstName.ToLower().Contains(searchObject.SearchFilter.ToLower())
+                    || x.LastName.ToLower().Contains(searchObject.SearchFilter.ToLower())
+                    || (!string.IsNullOrEmpty(x.PhoneNumber) && x.PhoneNumber.ToLower().Contains(searchObject.SearchFilter.ToLower()))
+                )
                 .ToPagedListAsync(searchObject, cancellationToken);
 
             return Mapper.Map<PagedList<UserModel>>(pagedList);

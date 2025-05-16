@@ -546,7 +546,7 @@ public class BusLinesService : BaseService<BusLine, int, BusLineModel, BusLineUp
                 .ThenInclude(x => x.Vehicle)
                     .ThenInclude(x => x.Company)
             .Include(x => x.Segments.OrderBy(x => x.StopOrder))
-            .Where(c => (string.IsNullOrEmpty(searchObject.SearchFilter) || c.Name.ToLower().Contains(searchObject.SearchFilter))
+            .Where(c => (string.IsNullOrEmpty(searchObject.SearchFilter) || c.Name.ToLower().Contains(searchObject.SearchFilter.ToLower()))
                 && (searchObject.CompanyId == null || searchObject.CompanyId == 0 || c.Vehicles.Any(v => v.Vehicle.CompanyId == searchObject.CompanyId))
                 && c.Active
                 && !c.IsDeleted

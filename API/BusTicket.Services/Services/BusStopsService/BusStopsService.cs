@@ -20,7 +20,9 @@ public class BusStopsService : BaseService<BusStop, int, BusStopModel, BusStopUp
     {
         var pagedList = await DbSet
             .Include(c => c.City)
-            .Where(c => (string.IsNullOrEmpty(searchObject.SearchFilter) || c.Name.ToLower().Contains(searchObject.SearchFilter))
+            .Where(c => (
+                string.IsNullOrEmpty(searchObject.SearchFilter) || c.Name.ToLower().Contains(searchObject.SearchFilter.ToLower())
+            )
                 && (searchObject.CityId == null || searchObject.CityId == 0 || searchObject.CityId == c.CityId)
             )
             .ToPagedListAsync(searchObject);

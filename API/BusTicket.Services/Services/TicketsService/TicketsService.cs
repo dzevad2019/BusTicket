@@ -42,7 +42,7 @@ public class TicketsService : BaseService<Ticket, int, TicketModel, TicketUpsert
                 .ThenInclude(ts => ts.BusLineSegmentTo)
             .Include(x => x.Persons)
                 .ThenInclude(p => p.Discount)
-            .Where(c => (string.IsNullOrEmpty(searchObject.SearchFilter) || c.TransactionId.ToLower().Contains(searchObject.SearchFilter))
+            .Where(c => (string.IsNullOrEmpty(searchObject.SearchFilter) || c.TransactionId.ToLower().Contains(searchObject.SearchFilter.ToLower()))
                 && (searchObject.CompanyId == null || searchObject.CompanyId == 0
                 ||
                 (c.TicketSegments.Any(ts =>

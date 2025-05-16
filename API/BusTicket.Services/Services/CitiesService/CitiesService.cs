@@ -20,7 +20,11 @@ public class CitiesService : BaseService<City, int, CityModel, CityUpsertModel, 
     {
         var pagedList = await DbSet
             .Include(c => c.Country)
-            .Where(c => (string.IsNullOrEmpty(searchObject.SearchFilter) || c.Name.ToLower().Contains(searchObject.SearchFilter))
+            .Where(c => (
+                    string.IsNullOrEmpty(searchObject.SearchFilter) 
+                    || c.Name.ToLower().Contains(searchObject.SearchFilter.ToLower())
+                    || c.Abrv.ToLower().Contains(searchObject.SearchFilter.ToLower())
+                )
                 && (searchObject.CountryId == null || searchObject.CountryId == 0 || searchObject.CountryId == c.CountryId)
                 && (!c.IsDeleted && !c.Country.IsDeleted)
             )

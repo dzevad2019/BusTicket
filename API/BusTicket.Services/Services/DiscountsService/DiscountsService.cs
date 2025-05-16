@@ -24,7 +24,7 @@ public class DiscountsService : BaseService<Discount, int, DiscountModel, Discou
     public override async Task<PagedList<DiscountModel>> GetPagedAsync(DiscountsSearchObject searchObject, CancellationToken cancellationToken = default)
     {
         var pagedList = await DbSet
-            .Where(c => string.IsNullOrEmpty(searchObject.SearchFilter) || c.Name.ToLower().Contains(searchObject.SearchFilter))
+            .Where(c => string.IsNullOrEmpty(searchObject.SearchFilter) || c.Name.ToLower().Contains(searchObject.SearchFilter.ToLower()))
             .ToPagedListAsync(searchObject);
         return Mapper.Map<PagedList<DiscountModel>>(pagedList);
     }

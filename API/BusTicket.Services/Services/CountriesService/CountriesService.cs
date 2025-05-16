@@ -19,7 +19,11 @@ public class CountriesService : BaseService<Country, int, CountryModel, CountryU
     public override async Task<PagedList<CountryModel>> GetPagedAsync(BaseSearchObject searchObject, CancellationToken cancellationToken = default)
     {
         var pagedList = await DbSet
-            .Where(c => string.IsNullOrEmpty(searchObject.SearchFilter) || c.Name.ToLower().Contains(searchObject.SearchFilter))
+            .Where(c => 
+                string.IsNullOrEmpty(searchObject.SearchFilter) 
+                || c.Name.ToLower().Contains(searchObject.SearchFilter.ToLower())
+                || c.Abrv.ToLower().Contains(searchObject.SearchFilter.ToLower())
+            )
             .ToPagedListAsync(searchObject);
         return Mapper.Map<PagedList<CountryModel>>(pagedList);
     }
