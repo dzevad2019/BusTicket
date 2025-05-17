@@ -4,6 +4,7 @@ import 'package:bus_ticket_mobile/providers/bus_lines_provider.dart';
 import 'package:bus_ticket_mobile/providers/dropdown_provider.dart';
 import 'package:bus_ticket_mobile/providers/recommendations_provider.dart';
 import 'package:bus_ticket_mobile/screens/bus-line/bus_routes_list.dart';
+import 'package:bus_ticket_mobile/screens/login/login_screen.dart';
 import 'package:bus_ticket_mobile/screens/notification/notification_page.dart';
 import 'package:bus_ticket_mobile/utils/authorization.dart';
 import 'package:flutter/material.dart';
@@ -240,6 +241,39 @@ class _HomePageState extends State<HomePage> {
         centerTitle: true,
         elevation: 0,
         backgroundColor: theme.primaryColor,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.logout),
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    title: Text("Potvrda odjave"),
+                    content: Text("Da li ste sigurni da želite da se odjavite?"),
+                    actions: [
+                      TextButton(
+                        child: Text("Otkaži"),
+                        onPressed: () {
+                          Navigator.of(context).pop(); // Zatvara dialog
+                        },
+                      ),
+                      TextButton(
+                        child: Text("Odjavi se"),
+                        onPressed: () {
+                          Navigator.of(context).pop(); // Zatvara dialog
+                          Authorization.id = 0;
+                          Authorization.token = null;
+                          Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => LoginScreen()));
+                        },
+                      ),
+                    ],
+                  );
+                },
+              );
+            },
+          ),
+        ],
       ),
       body: _isLoading ? Center(child: CircularProgressIndicator()) : SingleChildScrollView(
         child: Column(

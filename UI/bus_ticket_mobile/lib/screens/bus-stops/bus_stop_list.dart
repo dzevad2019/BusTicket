@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bus_ticket_mobile/models/bus_stop.dart';
 import 'package:bus_ticket_mobile/providers/bus_stops_provider.dart';
 import 'package:flutter/material.dart';
@@ -20,6 +22,10 @@ class _BusStopsPageState extends State<BusStopsPage> {
 
   late BusStopsProvider _busStopsProvider;
 
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  Timer? _searchDebounce;
+
   final ScrollController _scrollController = ScrollController();
   final double _cardElevation = 2.0;
   final Color _primaryColor = Colors.deepPurple.shade700;
@@ -31,12 +37,29 @@ class _BusStopsPageState extends State<BusStopsPage> {
     _busStopsProvider = context.read<BusStopsProvider>();
     _loadBusStops();
     _scrollController.addListener(_scrollListener);
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  void _onSearchChanged() {
+    if (_searchDebounce?.isActive ?? false) _searchDebounce?.cancel();
+
+    _searchDebounce = Timer(const Duration(milliseconds: 500), () {
+      setState(() {
+        _searchQuery = _searchController.text.toLowerCase();
+        _currentPage = 1;
+        _hasMore = true;
+
+        _loadBusStops();
+      });
+    });
   }
 
   @override
   void dispose() {
-    _scrollController.dispose();
     super.dispose();
+    _scrollController.dispose();
+    _searchController.dispose();
+    _searchDebounce?.cancel();
   }
 
   void _scrollListener() {
@@ -60,12 +83,18 @@ class _BusStopsPageState extends State<BusStopsPage> {
       var params = {
         'PageNumber': _currentPage.toString(),
         'PageSize': _itemsPerPage.toString(),
+        'SearchFilter': _searchQuery
       };
 
       var response = await _busStopsProvider.getForPagination(params);
       var newCompanies = response.items;
       setState(() {
         _isLoading = false;
+
+        if (_searchQuery.isNotEmpty || _currentPage == 1) {
+          _busStops.clear();
+        }
+
         _busStops.addAll(newCompanies);
         _currentPage++;
 
@@ -104,7 +133,7 @@ class _BusStopsPageState extends State<BusStopsPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Bus Stops',
+        title: const Text('Autobuske stanice',
             style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 20,
@@ -144,6 +173,12 @@ class _BusStopsPageState extends State<BusStopsPage> {
           child: CustomScrollView(
             controller: _scrollController,
             slivers: [
+              SliverPadding(
+                padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+                sliver: SliverToBoxAdapter(
+                  child: _buildSearchField(),
+                ),
+              ),
               if (_busStops.isEmpty && !_isLoading)
                 SliverFillRemaining(
                   child: Center(
@@ -179,6 +214,34 @@ class _BusStopsPageState extends State<BusStopsPage> {
                   ),
                 ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSearchField() {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 12),
+        child: TextField(
+          controller: _searchController,
+          decoration: InputDecoration(
+            hintText: 'Pretraga po nazivu...',
+            border: InputBorder.none,
+            prefixIcon: Icon(Icons.search, color: Colors.grey.shade600),
+            suffixIcon: _searchQuery.isNotEmpty
+                ? IconButton(
+              icon: Icon(Icons.clear, color: Colors.grey.shade600),
+              onPressed: () {
+                _searchController.clear();
+              },
+            )
+                : null,
           ),
         ),
       ),

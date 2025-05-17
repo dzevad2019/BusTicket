@@ -100,31 +100,31 @@ class _NotificationListScreenState extends State<NotificationListScreen> {
         body: isLoading
             ? Center(child: CircularProgressIndicator())
             : Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildHeader(),
-                    const SizedBox(height: 16),
-                    _buildSearch(),
-                    const SizedBox(height: 24),
-                    Expanded(
-                      child: Card(
-                        elevation: 2,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: _buildList(context),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    _buildPagination(),
-                  ],
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildHeader(),
+              const SizedBox(height: 16),
+              _buildSearch(),
+              const SizedBox(height: 24),
+              Expanded(
+                child: Card(
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: _buildList(context),
+                  ),
                 ),
               ),
+              const SizedBox(height: 16),
+              _buildPagination(),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -284,7 +284,7 @@ class _NotificationListScreenState extends State<NotificationListScreen> {
                 value: _selectedSearchLineId,
                 decoration: InputDecoration(
                   contentPadding:
-                      EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+                  EdgeInsets.symmetric(horizontal: 10, vertical: 0),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                     borderSide: BorderSide(color: Colors.grey),
@@ -319,7 +319,7 @@ class _NotificationListScreenState extends State<NotificationListScreen> {
               },
               style: ElevatedButton.styleFrom(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -335,7 +335,7 @@ class _NotificationListScreenState extends State<NotificationListScreen> {
               label: const Text('Pošalji notifikaciju'),
               style: ElevatedButton.styleFrom(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -371,7 +371,7 @@ class _NotificationListScreenState extends State<NotificationListScreen> {
           ],
           rows: List.generate(
             data.length,
-            (index) => recentDataRow(data[index], context),
+                (index) => recentDataRow(data[index], context),
           ),
         ),
       ),
@@ -497,9 +497,9 @@ class _NotificationListScreenState extends State<NotificationListScreen> {
                         value: _selectedLineId,
                         items: busLines
                             .map((line) => DropdownMenuItem<int>(
-                                  value: line.id,
-                                  child: Text(line.label),
-                                ))
+                          value: line.id,
+                          child: Text(line.label),
+                        ))
                             .toList(),
                         onChanged: (value) {
                           setState(() {
@@ -525,7 +525,7 @@ class _NotificationListScreenState extends State<NotificationListScreen> {
                             initialDate: _selectedDate,
                             firstDate: DateTime.now(),
                             lastDate:
-                                DateTime.now().add(const Duration(days: 365)),
+                            DateTime.now().add(const Duration(days: 365)),
                           );
                           if (selectedDate != null) {
                             setState(() {
@@ -602,6 +602,8 @@ class _NotificationListScreenState extends State<NotificationListScreen> {
         );
         Navigator.pop(context);
         loadData("", 1, pageSize);
+        _messageController.text = "";
+        _selectedLineId = null;
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(

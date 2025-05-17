@@ -52,6 +52,8 @@ namespace BusTicket.Services
                     || x.UserName.ToLower().Contains(searchObject.SearchFilter.ToLower())
                     || x.FirstName.ToLower().Contains(searchObject.SearchFilter.ToLower())
                     || x.LastName.ToLower().Contains(searchObject.SearchFilter.ToLower())
+                    || (x.FirstName + " " +x.LastName).ToLower().Contains(searchObject.SearchFilter.ToLower())
+                    || (x.LastName + " " +x.FirstName).ToLower().Contains(searchObject.SearchFilter.ToLower())
                     || (!string.IsNullOrEmpty(x.PhoneNumber) && x.PhoneNumber.ToLower().Contains(searchObject.SearchFilter.ToLower()))
                 )
                 .ToPagedListAsync(searchObject, cancellationToken);

@@ -135,14 +135,20 @@ class _UserAddScreenState extends State<UserAddScreen> {
       }
 
       try {
+
+        String message = "";
+        print(_user.toJson());
+        _user.profilePhoto = null;
         if (widget.userId == null) {
           await _userProvider.insert(_user);
+          message = "Korisnik je uspješno dodan. Pristupni podaci su poslani na korisnikovu email adresu.";
         } else {
           await _userProvider.update(widget.userId!, _user);
+          message = "Podaci su uspješno spremljeni";
         }
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Podaci su uspješno spremljeni"),
+          SnackBar(
+            content: Text(message),
             backgroundColor: Colors.green,
           ),
         );
@@ -178,85 +184,101 @@ class _UserAddScreenState extends State<UserAddScreen> {
         body: _isLoading
             ? Center(child: CircularProgressIndicator())
             : SingleChildScrollView(
-                padding: EdgeInsets.all(24),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      _buildSectionHeader("Osnovni podaci"),
-                      _buildCard([
-                        _buildTextFormField(
-                          label: "Ime",
-                          icon: Icons.person,
-                          initialValue: _user.firstName,
-                          validator: (value) =>
-                              value?.isEmpty ?? true ? "Unesite ime" : null,
-                          onSaved: (value) => _user.firstName = value!,
-                        ),
-                        SizedBox(height: 16),
-                        _buildTextFormField(
-                          label: "Prezime",
-                          icon: Icons.person_outline,
-                          initialValue: _user.lastName,
-                          validator: (value) =>
-                              value?.isEmpty ?? true ? "Unesite prezime" : null,
-                          onSaved: (value) => _user.lastName = value!,
-                        ),
-                        SizedBox(height: 16),
-                        _buildBirthDateField(),
-                        SizedBox(height: 16),
-                        _buildGenderDropdown(),
-                      ]),
-                      SizedBox(height: 24),
-                      _buildSectionHeader("Račun korisnika"),
-                      _buildCard([
-                        _buildTextFormField(
-                            label: "Korisničko ime",
-                            icon: Icons.account_circle,
-                            initialValue: _user.userName,
-                            validator: (value) => value?.isEmpty ?? true
-                                ? "Unesite korisničko ime"
-                                : null,
-                            onSaved: (value) => _user.userName = value!,
-                            enabled: false),
-                        SizedBox(height: 16),
-                        _buildTextFormField(
-                            label: "Email",
-                            icon: Icons.email,
-                            initialValue: _user.email,
-                            keyboardType: TextInputType.emailAddress,
-                            validator: (value) =>
-                                value?.isEmpty ?? true ? "Unesite email" : null,
-                            onSaved: (value) => _user.email = value!,
-                            enabled: false),
-                        SizedBox(height: 16),
-                        _buildRoleDropdown(),
-                      ]),
-                      SizedBox(height: 24),
-                      _buildSectionHeader("Kontakt podaci"),
-                      _buildCard([
-                        _buildTextFormField(
-                          label: "Telefon",
-                          icon: Icons.phone,
-                          initialValue: _user.phoneNumber,
-                          keyboardType: TextInputType.phone,
-                          onSaved: (value) => _user.phoneNumber = value!,
-                        ),
-                        SizedBox(height: 16),
-                        _buildTextFormField(
-                          label: "Adresa",
-                          icon: Icons.home,
-                          initialValue: _user.address,
-                          onSaved: (value) => _user.address = value!,
-                        ),
-                      ]),
-                      SizedBox(height: 24),
-                      _buildSaveButton(),
-                    ],
+          padding: EdgeInsets.all(24),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _buildSectionHeader("Osnovni podaci"),
+                _buildCard([
+                  _buildTextFormField(
+                    label: "Ime",
+                    icon: Icons.person,
+                    initialValue: _user.firstName,
+                    validator: (value) =>
+                    value?.isEmpty ?? true ? "Unesite ime" : null,
+                    onSaved: (value) => _user.firstName = value!,
                   ),
-                ),
-              ),
+                  SizedBox(height: 16),
+                  _buildTextFormField(
+                    label: "Prezime",
+                    icon: Icons.person_outline,
+                    initialValue: _user.lastName,
+                    validator: (value) =>
+                    value?.isEmpty ?? true ? "Unesite prezime" : null,
+                    onSaved: (value) => _user.lastName = value!,
+                  ),
+                  SizedBox(height: 16),
+                  _buildBirthDateField(),
+                  SizedBox(height: 16),
+                  _buildGenderDropdown(),
+                ]),
+                SizedBox(height: 24),
+                _buildSectionHeader("Račun korisnika"),
+                _buildCard([
+                  if (_user.id != 0 && _user.id != null) ...[
+                    _buildTextFormField(
+                        label: "Korisničko ime",
+                        icon: Icons.account_circle,
+                        initialValue: _user.userName,
+                        validator: (value) => value?.isEmpty ?? true
+                            ? "Unesite korisničko ime"
+                            : null,
+                        onSaved: (value) => _user.userName = value!,
+                        enabled: _user.id == 0 || _user.id == null
+                    ),
+                    SizedBox(height: 16),
+                  ],
+                  _buildTextFormField(
+                      label: "Email",
+                      icon: Icons.email,
+                      initialValue: _user.email,
+                      keyboardType: TextInputType.emailAddress,
+                      validator: (value) =>
+                      value?.isEmpty ?? true ? "Unesite email" : null,
+                      onSaved: (value) => _user.email = value!,
+                      enabled: _user.id == 0 || _user.id == null
+                  ),
+                  SizedBox(height: 16),
+                  _buildRoleDropdown(),
+                ]),
+                SizedBox(height: 24),
+                _buildSectionHeader("Kontakt podaci"),
+                _buildCard([
+                  _buildTextFormField(
+                    label: "Telefon",
+                    icon: Icons.phone,
+                    initialValue: _user.phoneNumber,
+                    keyboardType: TextInputType.phone,
+                    onSaved: (value) => _user.phoneNumber = value!,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Unesite broj telefona';
+                      }
+                      if (!RegExp(r'^[0-9+]+$').hasMatch(value)) {
+                        return 'Broj telefona može sadržavati samo brojeve';
+                      }
+                      if (value.length < 8) {
+                        return 'Broj telefona mora imati najmanje 8 cifara';
+                      }
+                      return null;
+                    },
+                  ),
+                  SizedBox(height: 16),
+                  _buildTextFormField(
+                    label: "Adresa",
+                    icon: Icons.home,
+                    initialValue: _user.address,
+                    onSaved: (value) => _user.address = value!,
+                  ),
+                ]),
+                SizedBox(height: 24),
+                _buildSaveButton(),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -290,12 +312,12 @@ class _UserAddScreenState extends State<UserAddScreen> {
 
   Widget _buildTextFormField(
       {required String label,
-      required String? initialValue,
-      IconData? icon,
-      TextInputType? keyboardType,
-      String? Function(String?)? validator,
-      required void Function(String?) onSaved,
-      bool? enabled}) {
+        required String? initialValue,
+        IconData? icon,
+        TextInputType? keyboardType,
+        String? Function(String?)? validator,
+        required void Function(String?) onSaved,
+        bool? enabled}) {
     return TextFormField(
       enabled: enabled == null || enabled == true,
       initialValue: initialValue,
@@ -355,7 +377,7 @@ class _UserAddScreenState extends State<UserAddScreen> {
           _selectedGender = value;
         });
       },
-      validator: (value) => value == null ? 'Odaberite spol' : null,
+      validator: (value) => value == null ? 'Obavezno polje' : null,
       borderRadius: BorderRadius.circular(12),
     );
   }
@@ -377,6 +399,7 @@ class _UserAddScreenState extends State<UserAddScreen> {
           child: Text(role.label),
         );
       }).toList(),
+      validator: (value) => value == null ? 'Obavezno polje' : null,
       onChanged: (ListItem? value) {
         setState(() {
           _selectedRole = value;

@@ -24,6 +24,9 @@ class AddEditBusLinePage extends StatefulWidget {
 
 class _AddEditBusLinePageState extends State<AddEditBusLinePage>
     with SingleTickerProviderStateMixin {
+  final _formKey = GlobalKey<FormState>();
+  final _priceFormKey = GlobalKey<FormState>();
+  final _vehicleFormKey = GlobalKey<FormState>();
   late final TabController _tabController;
   late final EnumProvider _enumProvider;
   late final BusLinesProvider _busLinesProvider;
@@ -31,11 +34,11 @@ class _AddEditBusLinePageState extends State<AddEditBusLinePage>
   late final ScrollController _horizontalScrollController;
 
   final TextEditingController _nameController =
-      TextEditingController(text: 'Gradska linija 7A');
+  TextEditingController(text: '');
   final TextEditingController _departureTimeController =
-      TextEditingController(text: '08:00');
+  TextEditingController(text: '08:00');
   final TextEditingController _arrivalTimeController =
-      TextEditingController(text: '09:00');
+  TextEditingController(text: '09:00');
 
   bool _isActive = true;
   List<ListItem> companies = [];
@@ -69,14 +72,14 @@ class _AddEditBusLinePageState extends State<AddEditBusLinePage>
 
   bool get _isAllWeekdaysSelected =>
       _selectedDays.contains(OperatingDays.monday) &&
-      _selectedDays.contains(OperatingDays.tuesday) &&
-      _selectedDays.contains(OperatingDays.wednesday) &&
-      _selectedDays.contains(OperatingDays.thursday) &&
-      _selectedDays.contains(OperatingDays.friday);
+          _selectedDays.contains(OperatingDays.tuesday) &&
+          _selectedDays.contains(OperatingDays.wednesday) &&
+          _selectedDays.contains(OperatingDays.thursday) &&
+          _selectedDays.contains(OperatingDays.friday);
 
   bool get _isAllWeekendSelected =>
       _selectedDays.contains(OperatingDays.saturday) &&
-      _selectedDays.contains(OperatingDays.sunday);
+          _selectedDays.contains(OperatingDays.sunday);
 
   bool get _isAllDaysSelected =>
       _selectedDays.length == OperatingDays.values.length;
@@ -161,7 +164,7 @@ class _AddEditBusLinePageState extends State<AddEditBusLinePage>
     if (selectedStopId == null) return;
 
     final alreadyExists =
-        _busLine.segments.any((s) => s.busStopId == selectedStopId);
+    _busLine.segments.any((s) => s.busStopId == selectedStopId);
     if (alreadyExists) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -229,7 +232,85 @@ class _AddEditBusLinePageState extends State<AddEditBusLinePage>
     });
   }
 
+  bool _validatePricing() {
+    final segments = _busLine.segments;
+    final lastIndex = segments.length - 1;
+
+    return segments.asMap().entries.every((entry) {
+      final idx = entry.key;
+      final prices = entry.value.prices;
+
+      if (idx != lastIndex) {
+        if (prices == null || prices.isEmpty) return false;
+      }
+
+      if (prices != null && prices.isNotEmpty) {
+        if (prices.any((p) =>
+        (p.oneWayTicketPrice ?? 0) <= 0 ||
+            (p.returnTicketPrice ?? 0) <= 0
+        )) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }
+
+
   void _saveBusLine() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    if (_nameController.text.isEmpty){
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Naziv linije je obavezno polje"),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (_busLine.segments.isEmpty || _busLine.segments.length < 2){
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Autobuska linija mora imati najmanje dvije stanice"),
+          backgroundColor: Colors.red,
+        ),
+      );
+      _tabController.animateTo(1);
+      return;
+    }
+
+    if (_validatePricing() == false || _priceFormKey.currentState?.validate() == false) {
+      _tabController.animateTo(2);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Cijene moraju biti veće od 0"),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (_busLine.vehicles.isEmpty) {
+      _tabController.animateTo(4);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Potrebno je da odaberete kompaniju i vozila koja će obavljati ovu liniju"),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (_vehicleFormKey.currentState?.validate() == false) {
+      _tabController.animateTo(4);
+      return;
+    }
+
     _busLine.name = _nameController.text;
     //_busLine.arrivalTime = _arrivalTimeController.text;
     //_busLine.departureTime = _departureTimeController.text;
@@ -242,14 +323,14 @@ class _AddEditBusLinePageState extends State<AddEditBusLinePage>
       value.busLineSegmentType = index == 0
           ? BusLineSegmentType.departure
           : index == _busLine.segments.length - 1
-              ? BusLineSegmentType.arrival
-              : BusLineSegmentType.middle;
+          ? BusLineSegmentType.arrival
+          : BusLineSegmentType.middle;
 
       value.prices?.asMap().forEach((index, pr) {
         pr.busLineSegmentFromId =
-            pr.busLineSegmentFromId < 0 ? 0 : pr.busLineSegmentFromId;
+        pr.busLineSegmentFromId < 0 ? 0 : pr.busLineSegmentFromId;
         pr.busLineSegmentToId =
-            pr.busLineSegmentToId < 0 ? 0 : pr.busLineSegmentToId;
+        pr.busLineSegmentToId < 0 ? 0 : pr.busLineSegmentToId;
       });
 
     });
@@ -401,13 +482,16 @@ class _AddEditBusLinePageState extends State<AddEditBusLinePage>
                   Row(
                     children: [
                       Expanded(
-                        child: TextField(
+                        child: TextFormField(
                           controller: _nameController,
                           decoration: const InputDecoration(
                             labelText: 'Naziv linije',
                             border: OutlineInputBorder(),
                             prefixIcon: Icon(Icons.directions_bus),
                           ),
+                          validator: (value) => value?.isEmpty ?? true
+                              ? "Ovo polje je obavezno"
+                              : null,
                         ),
                       ),
                     ],
@@ -575,7 +659,7 @@ class _AddEditBusLinePageState extends State<AddEditBusLinePage>
                           ),
                           items: busStops.map((s) => s.id!).toList(),
                           itemAsString: (id) =>
-                              busStops.firstWhere((s) => s.id == id).label,
+                          busStops.firstWhere((s) => s.id == id).label,
                           dropdownDecoratorProps: DropDownDecoratorProps(
                             dropdownSearchDecoration: const InputDecoration(
                               labelText: 'Stajalište',
@@ -588,10 +672,16 @@ class _AddEditBusLinePageState extends State<AddEditBusLinePage>
                         ),
                       ),
                       const SizedBox(width: 8),
-                      IconButton(
-                        icon: const Icon(Icons.add_circle,
-                            color: Colors.blue, size: 32),
-                        onPressed: _addStop,
+                      Container(
+                        width: 200,
+                        child: ElevatedButton(
+                          onPressed: _addStop,
+                          child: const Text('Dodaj', style: TextStyle(color: Colors.white)),
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            backgroundColor: Colors.deepPurple,
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -610,8 +700,8 @@ class _AddEditBusLinePageState extends State<AddEditBusLinePage>
                       onReorder: _onReorder,
                       children: [
                         for (int index = 0;
-                            index < _busLine.segments.length;
-                            index++)
+                        index < _busLine.segments.length;
+                        index++)
                           _buildStopListItem(_busLine.segments[index], index),
                       ],
                     ),
@@ -669,7 +759,7 @@ class _AddEditBusLinePageState extends State<AddEditBusLinePage>
               segment.departureTime ?? 'Odaberi vrijeme',
               style: TextStyle(
                 color:
-                    segment.departureTime != null ? Colors.black : Colors.grey,
+                segment.departureTime != null ? Colors.black : Colors.grey,
               ),
             ),
           ],
@@ -704,7 +794,7 @@ class _AddEditBusLinePageState extends State<AddEditBusLinePage>
     }
 
     final prevTime =
-        _timeFromString(_busLine.segments[index - 1].departureTime!);
+    _timeFromString(_busLine.segments[index - 1].departureTime!);
 
     // Get next segment time if exists and has time set
     TimeOfDay? nextTime;
@@ -812,16 +902,16 @@ class _AddEditBusLinePageState extends State<AddEditBusLinePage>
                             showSearchBox: true,
                             searchFieldProps: const TextFieldProps(
                               decoration:
-                                  InputDecoration(hintText: 'Pretraga popusta'),
+                              InputDecoration(hintText: 'Pretraga popusta'),
                             ),
                           ),
                           items: discounts
                               .where((d) => !_busLine.discounts
-                                  .any((bd) => bd.discountId == d.id))
+                              .any((bd) => bd.discountId == d.id))
                               .map((s) => s.id!)
                               .toList(),
                           itemAsString: (id) =>
-                              discounts.firstWhere((s) => s.id == id).label,
+                          discounts.firstWhere((s) => s.id == id).label,
                           dropdownDecoratorProps: DropDownDecoratorProps(
                             dropdownSearchDecoration: const InputDecoration(
                               labelText: 'Odaberi popust',
@@ -844,15 +934,15 @@ class _AddEditBusLinePageState extends State<AddEditBusLinePage>
                         onPressed: selectedDiscountId == null
                             ? null
                             : () {
-                                setState(() {
-                                  _busLine.discounts.add(BusLineDiscount(
-                                      id: 0,
-                                      discountId: selectedDiscountId!,
-                                      busLineId: _busLine.id,
-                                      value: 0));
-                                  selectedDiscountId = null;
-                                });
-                              },
+                          setState(() {
+                            _busLine.discounts.add(BusLineDiscount(
+                                id: 0,
+                                discountId: selectedDiscountId!,
+                                busLineId: _busLine.id,
+                                value: 0));
+                            selectedDiscountId = null;
+                          });
+                        },
                       ),
                     ],
                   ),
@@ -879,7 +969,7 @@ class _AddEditBusLinePageState extends State<AddEditBusLinePage>
                           decoration: BoxDecoration(
                             border: Border(
                                 bottom:
-                                    BorderSide(color: Colors.grey.shade200)),
+                                BorderSide(color: Colors.grey.shade200)),
                           ),
                           child: ListTile(
                             title: Text(discountInfo.label),
@@ -904,7 +994,7 @@ class _AddEditBusLinePageState extends State<AddEditBusLinePage>
                                 return null;
                               },
                               initialValue:
-                                  _busLine.discounts[index].value.toString(),
+                              _busLine.discounts[index].value.toString(),
                               decoration: const InputDecoration(
                                 labelText: 'Popust u %',
                                 border: OutlineInputBorder(),
@@ -942,70 +1032,73 @@ class _AddEditBusLinePageState extends State<AddEditBusLinePage>
   }
 
   Widget _buildPricingMatrix() {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: Text(
-            "Cjenovnik za liniju: ${_nameController.text}",
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+    return Form(
+      key: _priceFormKey,
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Text(
+              "Cjenovnik za liniju: ${_nameController.text}",
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
           ),
-        ),
-        Expanded(
-          child: Scrollbar(
-            controller: _verticalScrollController,
-            thumbVisibility: true,
-            child: SingleChildScrollView(
+          Expanded(
+            child: Scrollbar(
               controller: _verticalScrollController,
-              scrollDirection: Axis.vertical,
-              child: Scrollbar(
-                controller: _horizontalScrollController,
-                thumbVisibility: true,
-                scrollbarOrientation: ScrollbarOrientation.bottom,
-                child: SingleChildScrollView(
+              thumbVisibility: true,
+              child: SingleChildScrollView(
+                controller: _verticalScrollController,
+                scrollDirection: Axis.vertical,
+                child: Scrollbar(
                   controller: _horizontalScrollController,
-                  scrollDirection: Axis.horizontal,
-                  child: DataTable(
-                    headingRowColor: MaterialStateProperty.resolveWith<Color?>(
-                      (Set<MaterialState> states) =>
-                          Theme.of(context).primaryColor.withOpacity(0.1),
-                    ),
-                    columnSpacing: 0,
-                    dataRowMinHeight: 60,
-                    dataRowMaxHeight: 120,
-                    columns: [
-                      const DataColumn(
-                        label: SizedBox(
-                          width: 100,
-                          child: Text(
-                            'Od \nDo',
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                            textAlign: TextAlign.center,
+                  thumbVisibility: true,
+                  scrollbarOrientation: ScrollbarOrientation.bottom,
+                  child: SingleChildScrollView(
+                    controller: _horizontalScrollController,
+                    scrollDirection: Axis.horizontal,
+                    child: DataTable(
+                      headingRowColor: MaterialStateProperty.resolveWith<Color?>(
+                            (Set<MaterialState> states) =>
+                            Theme.of(context).primaryColor.withOpacity(0.1),
+                      ),
+                      columnSpacing: 0,
+                      dataRowMinHeight: 60,
+                      dataRowMaxHeight: 120,
+                      columns: [
+                        const DataColumn(
+                          label: SizedBox(
+                            width: 100,
+                            child: Text(
+                              'Od \nDo',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                              textAlign: TextAlign.center,
+                            ),
                           ),
                         ),
-                      ),
-                      ..._busLine.segments.skip(1).map((stop) => DataColumn(
-                            label: SizedBox(
-                              width: 150,
-                              child: Text(
-                                busStops
-                                    .firstWhere((bs) => bs.id == stop.busStopId)
-                                    .label,
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.bold),
-                                textAlign: TextAlign.center,
-                              ),
+                        ..._busLine.segments.skip(1).map((stop) => DataColumn(
+                          label: SizedBox(
+                            width: 150,
+                            child: Text(
+                              busStops
+                                  .firstWhere((bs) => bs.id == stop.busStopId)
+                                  .label,
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.bold),
+                              textAlign: TextAlign.center,
                             ),
-                          )),
-                    ],
-                    rows: _buildPricingRows(),
+                          ),
+                        )),
+                      ],
+                      rows: _buildPricingRows(),
+                    ),
                   ),
                 ),
               ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -1026,7 +1119,7 @@ class _AddEditBusLinePageState extends State<AddEditBusLinePage>
             ),
           ),
           ...List.generate(_busLine.segments.indexOf(from),
-              (index) => const DataCell(Text(''))),
+                  (index) => const DataCell(Text(''))),
           ..._busLine.segments
               .skip(_busLine.segments.indexOf(from) + 1)
               .map((to) {
@@ -1040,10 +1133,10 @@ class _AddEditBusLinePageState extends State<AddEditBusLinePage>
 
   Widget _buildPriceInputFields(BusLineSegment from, BusLineSegment to) {
     final segment =
-        _busLine.segments.firstWhere((bs) => bs.busStopId == from.busStopId);
+    _busLine.segments.firstWhere((bs) => bs.busStopId == from.busStopId);
     final price = segment.prices?.firstWhere(
-      (bs) =>
-          from.id != 0 &&
+          (bs) =>
+      from.id != 0 &&
           to.id != 0 &&
           bs.busLineSegmentFromId == from.id &&
           bs.busLineSegmentToId == to.id,
@@ -1099,8 +1192,11 @@ class _AddEditBusLinePageState extends State<AddEditBusLinePage>
           FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
         ],
         validator: (value) {
-          if (value == null || value.isEmpty) return 'Unesite cijenu';
-          if (double.tryParse(value) == null) return 'Unesite validan broj';
+          final text = value?.trim();
+          if (text == null || text.isEmpty) return 'Unesite cijenu';
+          final price = double.tryParse(text);
+          if (price == null) return 'Unesite validan broj';
+          if (price <= 0) return 'Cijena mora biti veća od 0';
           return null;
         },
         initialValue: initialValue,
@@ -1112,11 +1208,11 @@ class _AddEditBusLinePageState extends State<AddEditBusLinePage>
   void _updatePrice(BusLineSegment from, BusLineSegment to, String value,
       {required bool isOneWay}) {
     final busStop =
-        _busLine.segments.firstWhere((bs) => bs.busStopId == from.busStopId);
+    _busLine.segments.firstWhere((bs) => bs.busStopId == from.busStopId);
     busStop.prices ??= [];
 
     final price = busStop.prices!.firstWhere(
-      (p) => p.busLineSegmentFromId == from.id && p.busLineSegmentToId == to.id,
+          (p) => p.busLineSegmentFromId == from.id && p.busLineSegmentToId == to.id,
       orElse: () {
         final newPrice = BusLineSegmentPrice(
           id: 0,
@@ -1140,13 +1236,13 @@ class _AddEditBusLinePageState extends State<AddEditBusLinePage>
 
       busStop.prices!.sort((a, b) {
         final fromIndexA =
-            _busLine.segments.indexWhere((s) => s.id == a.busLineSegmentFromId);
+        _busLine.segments.indexWhere((s) => s.id == a.busLineSegmentFromId);
         final toIndexA =
-            _busLine.segments.indexWhere((s) => s.id == a.busLineSegmentToId);
+        _busLine.segments.indexWhere((s) => s.id == a.busLineSegmentToId);
         final fromIndexB =
-            _busLine.segments.indexWhere((s) => s.id == b.busLineSegmentFromId);
+        _busLine.segments.indexWhere((s) => s.id == b.busLineSegmentFromId);
         final toIndexB =
-            _busLine.segments.indexWhere((s) => s.id == b.busLineSegmentToId);
+        _busLine.segments.indexWhere((s) => s.id == b.busLineSegmentToId);
 
         final orderA = fromIndexA * 1000 + toIndexA;
         final orderB = fromIndexB * 1000 + toIndexB;
@@ -1207,203 +1303,222 @@ class _AddEditBusLinePageState extends State<AddEditBusLinePage>
       body: SafeArea(
         child: loading
             ? CircularProgressIndicator()
-            : Column(
-                children: [
-                  Expanded(
-                    child: TabBarView(
-                      controller: _tabController,
-                      children: [
-                        _buildBasicTab(),
-                        _buildStopsTab(),
-                        (_busLine.segments.isNotEmpty
-                            ? _buildPricingMatrix()
-                            : _buildTabPlaceholder(
-                                icon: Icons.price_check,
-                                title: "Upravljanje cjenovnikom",
-                                message:
-                                    "Potrebno je prvo da dodate autobuske stanice da biste mogli upravljati cjenovnikom",
-                                color: Colors.blue,
-                              )),
-                        _buildDicountsTab(),
-                        _buildVehiclesTab(),
-                        //_buildTabPlaceholder(
-                        //  icon: Icons.directions_bus,
-                        //  title: "Upravljanje vozilima",
-                        //  message: "Ova funkcionalnost će biti dostupna uskoro",
-                        //  color: Colors.green,
-                        //),
-                      ],
-                    ),
+            : Form(
+            key: _formKey,
+            child: Column(
+              children: [
+                Expanded(
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: [
+                      _buildBasicTab(),
+                      _buildStopsTab(),
+                      (_busLine.segments.isNotEmpty && _busLine.segments.length > 1
+                          ? _buildPricingMatrix()
+                          : _buildTabPlaceholder(
+                        icon: Icons.price_check,
+                        title: "Upravljanje cjenovnikom",
+                        message:
+                        "Potrebno je prvo da dodate najmanje dvije autobuske stanice da biste mogli upravljati cjenovnikom",
+                        color: Colors.blue,
+                      )),
+                      _buildDicountsTab(),
+                      _buildVehiclesTab(),
+                      //_buildTabPlaceholder(
+                      //  icon: Icons.directions_bus,
+                      //  title: "Upravljanje vozilima",
+                      //  message: "Ova funkcionalnost će biti dostupna uskoro",
+                      //  color: Colors.green,
+                      //),
+                    ],
                   ),
-                  _buildBottomActionBar(),
-                ],
-              ),
+                ),
+                _buildBottomActionBar(),
+              ],
+            )
+        ),
       ),
     );
   }
 
   Widget _buildVehiclesTab() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Card(
-            elevation: 2,
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  const Text(
-                    "Upravljanje vozilima",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 16),
-                  DropdownSearch<ListItem>(
-                      popupProps: PopupProps.menu(
-                        showSearchBox: true,
-                        searchFieldProps: const TextFieldProps(
-                          decoration: InputDecoration(
-                            hintText: 'Pretraga kompanija',
-                            prefixIcon: Icon(Icons.search),
-                          ),
-                        ),
+    return Form(
+        key: _vehicleFormKey,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Card(
+                elevation: 2,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      const Text(
+                        "Upravljanje vozilima",
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                       ),
-                      asyncItems: (filter) async {
-                        return companies;
-                      },
-                      itemAsString: (item) => item.label,
-                      dropdownDecoratorProps: DropDownDecoratorProps(
-                        dropdownSearchDecoration: const InputDecoration(
-                          labelText: 'Kompanija',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.business),
-                        ),
-                      ),
-                      onChanged: (selectedCompany) async {
-                        if (selectedCompany != null) {
-                          if (selectedCompanyId != selectedCompany.id) {
-                            _busLine.vehicles = [];
-                            _selectedVehicle = null;
-                          }
-                          setState(() {
-                            selectedCompanyId = selectedCompany.id;
-                          });
-                          await _loadVehicles(companyId: selectedCompany.id!);
-                        }
-                      },
-                      selectedItem: companies.firstWhere(
-                          (c) => c.id == selectedCompanyId,
-                          orElse: () => ListItem(id: 0, label: ''))),
-                  const SizedBox(height: 20),
-                  if (selectedCompanyId != null) ...[
-                    Row(
-                      children: [
-                        Expanded(
-                          child: DropdownSearch<ListItem>(
-                            popupProps: PopupProps.menu(
-                              showSearchBox: true,
-                              searchFieldProps: const TextFieldProps(
-                                decoration: InputDecoration(
-                                  hintText: 'Pretraga vozila',
-                                  prefixIcon: Icon(Icons.search),
-                                ),
+                      const SizedBox(height: 16),
+                      DropdownSearch<ListItem>(
+                          popupProps: PopupProps.menu(
+                            showSearchBox: true,
+                            searchFieldProps: const TextFieldProps(
+                              decoration: InputDecoration(
+                                hintText: 'Pretraga kompanija',
+                                prefixIcon: Icon(Icons.search),
                               ),
                             ),
-                            items: vehicles
-                                .where((v) => !_busLine.vehicles
-                                    .any((sv) => sv.vehicleId == v.id))
-                                .toList(),
-                            itemAsString: (item) => item.label,
-                            dropdownDecoratorProps: DropDownDecoratorProps(
-                              dropdownSearchDecoration: const InputDecoration(
-                                labelText: 'Dostupna vozila',
-                                border: OutlineInputBorder(),
-                                prefixIcon: Icon(Icons.directions_bus),
-                              ),
-                            ),
-                            onChanged: (selectedVehicle) {
-                              setState(() {
-                                _selectedVehicle = selectedVehicle;
-                              });
-                            },
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        IconButton(
-                          icon: const Icon(Icons.add_circle,
-                              size: 40, color: Colors.green),
-                          onPressed: () {
-                            if (_selectedVehicle != null) {
-                              setState(() {
-                                _busLine.vehicles.add(BusLineVehicle(
-                                  id: 0,
-                                  busLineId: _busLine.id,
-                                  vehicleId: _selectedVehicle!.id!,
-                                ));
+                          asyncItems: (filter) async {
+                            return companies;
+                          },
+                          itemAsString: (item) => item.label,
+                          dropdownDecoratorProps: DropDownDecoratorProps(
+                            dropdownSearchDecoration: const InputDecoration(
+                              labelText: 'Kompanija',
+                              border: OutlineInputBorder(),
+                              prefixIcon: Icon(Icons.business),
+                            ),
+                          ),
+                          onChanged: (selectedCompany) async {
+                            if (selectedCompany != null) {
+                              if (selectedCompanyId != selectedCompany.id) {
+                                _busLine.vehicles = [];
                                 _selectedVehicle = null;
+                              }
+                              setState(() {
+                                selectedCompanyId = selectedCompany.id;
                               });
-                            } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Molimo odaberite vozilo prvo'),
-                                  backgroundColor: Colors.red,
-                                ),
-                              );
+                              await _loadVehicles(companyId: selectedCompany.id!);
                             }
                           },
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                    const Text(
-                      "Dodijeljena vozila:",
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 8),
-                    if (_busLine.vehicles.isEmpty)
-                      const Padding(
-                        padding: EdgeInsets.all(8.0),
-                        child: Text("Nema dodijeljenih vozila"),
-                      )
-                    else
-                      ListView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: _busLine.vehicles.length,
-                        itemBuilder: (context, index) {
-                          final assignedVehicle = _busLine.vehicles[index];
-                          final vehicle = vehicles.firstWhere(
-                            (v) => v.id == assignedVehicle.vehicleId,
-                            orElse: () =>
-                                ListItem(id: -1, label: 'Nepoznato vozilo'),
-                          );
-
-                          return Card(
-                            margin: const EdgeInsets.only(bottom: 8),
-                            color: Colors.grey[100],
-                            child: ListTile(
-                              title: Text(vehicle.label),
-                              trailing: IconButton(
-                                icon: const Icon(Icons.remove_circle,
-                                    color: Colors.red),
-                                onPressed: () {
+                          validator: (value) => value == null
+                              ? 'Morate odabrati kompaniju'
+                              : null,
+                          selectedItem: companies.firstWhere(
+                                  (c) => c.id == selectedCompanyId,
+                              orElse: () => ListItem(id: 0, label: ''))),
+                      const SizedBox(height: 20),
+                      if (selectedCompanyId != null) ...[
+                        Row(
+                          children: [
+                            Expanded(
+                              child: DropdownSearch<ListItem>(
+                                popupProps: PopupProps.menu(
+                                  showSearchBox: true,
+                                  searchFieldProps: const TextFieldProps(
+                                    decoration: InputDecoration(
+                                      hintText: 'Pretraga vozila',
+                                      prefixIcon: Icon(Icons.search),
+                                    ),
+                                  ),
+                                ),
+                                items: vehicles
+                                    .where((v) => !_busLine.vehicles
+                                    .any((sv) => sv.vehicleId == v.id))
+                                    .toList(),
+                                itemAsString: (item) => item.label,
+                                dropdownDecoratorProps: DropDownDecoratorProps(
+                                  dropdownSearchDecoration: const InputDecoration(
+                                    labelText: 'Dostupna vozila',
+                                    border: OutlineInputBorder(),
+                                    prefixIcon: Icon(Icons.directions_bus),
+                                  ),
+                                ),
+                                onChanged: (selectedVehicle) {
                                   setState(() {
-                                    _busLine.vehicles.removeAt(index);
+                                    _selectedVehicle = selectedVehicle;
                                   });
                                 },
+                                //validator: (value) => value == null
+                                //    ? 'Morate odabrati vozilo'
+                                //    : null,
                               ),
                             ),
-                          );
-                        },
-                      ),
-                  ],
-                ],
+                            const SizedBox(width: 8),
+                            Container(
+                              width: 200,
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  if (_selectedVehicle != null) {
+                                    setState(() {
+                                      _busLine.vehicles.add(BusLineVehicle(
+                                        id: 0,
+                                        busLineId: _busLine.id,
+                                        vehicleId: _selectedVehicle!.id!,
+                                      ));
+                                      _selectedVehicle = null;
+                                    });
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Molimo odaberite vozilo prvo'),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
+                                  }
+                                },
+                                child: const Text('Dodaj', style: TextStyle(color: Colors.white)),
+                                style: ElevatedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                  backgroundColor: Colors.deepPurple,
+                                ),
+                              ),
+                            ),
+
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        const Text(
+                          "Dodijeljena vozila:",
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 8),
+                        if (_busLine.vehicles.isEmpty)
+                          const Padding(
+                            padding: EdgeInsets.all(8.0),
+                            child: Text("Nema dodijeljenih vozila"),
+                          )
+                        else
+                          ListView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: _busLine.vehicles.length,
+                            itemBuilder: (context, index) {
+                              final assignedVehicle = _busLine.vehicles[index];
+                              final vehicle = vehicles.firstWhere(
+                                    (v) => v.id == assignedVehicle.vehicleId,
+                                orElse: () =>
+                                    ListItem(id: -1, label: 'Nepoznato vozilo'),
+                              );
+
+                              return Card(
+                                margin: const EdgeInsets.only(bottom: 8),
+                                color: Colors.grey[100],
+                                child: ListTile(
+                                  title: Text(vehicle.label),
+                                  trailing: IconButton(
+                                    icon: const Icon(Icons.remove_circle,
+                                        color: Colors.red),
+                                    onPressed: () {
+                                      setState(() {
+                                        _busLine.vehicles.removeAt(index);
+                                      });
+                                    },
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                      ],
+                    ],
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
-        ],
-      ),
+        )
     );
   }
 

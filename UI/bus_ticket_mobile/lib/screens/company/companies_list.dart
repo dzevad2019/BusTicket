@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bus_ticket_mobile/models/company.dart';
 import 'package:bus_ticket_mobile/providers/base_provider.dart';
 import 'package:bus_ticket_mobile/providers/companies_provider.dart';
@@ -18,6 +20,10 @@ class _CompaniesPageState extends State<CompaniesPage> {
   bool _hasMore = true;
   final List<Company> _companies = [];
 
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  Timer? _searchDebounce;
+
   late CompaniesProvider _companiesProvider;
 
   final ScrollController _scrollController = ScrollController();
@@ -31,19 +37,36 @@ class _CompaniesPageState extends State<CompaniesPage> {
     _companiesProvider = context.read<CompaniesProvider>();
     _loadCompanies();
     _scrollController.addListener(_scrollListener);
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  void _onSearchChanged() {
+    if (_searchDebounce?.isActive ?? false) _searchDebounce?.cancel();
+
+    _searchDebounce = Timer(const Duration(milliseconds: 500), () {
+      setState(() {
+        _searchQuery = _searchController.text.toLowerCase();
+        _currentPage = 1;
+        _hasMore = true;
+
+        _loadCompanies();
+      });
+    });
   }
 
   @override
   void dispose() {
-    _scrollController.dispose();
     super.dispose();
+    _scrollController.dispose();
+    _searchController.dispose();
+    _searchDebounce?.cancel();
   }
 
   void _scrollListener() {
     if (_scrollController.offset >=
         _scrollController.position.maxScrollExtent &&
         !_scrollController.position.outOfRange) {
-      if (!_isLoading && _hasMore) {
+      if (!_isLoading && _hasMore && _searchQuery.isEmpty) {
         _loadCompanies();
       }
     }
@@ -61,14 +84,21 @@ class _CompaniesPageState extends State<CompaniesPage> {
       var params = {
         'PageNumber': _currentPage.toString(),
         'PageSize': _itemsPerPage.toString(),
+        'SearchFilter': _searchQuery
       };
 
       var response = await _companiesProvider.getForPagination(params);
       var newCompanies = response.items;
       setState(() {
         _isLoading = false;
+
+        if (_searchQuery.isNotEmpty || _currentPage == 1) {
+          _companies.clear();
+        }
+
         _companies.addAll(newCompanies);
         _currentPage++;
+
 
         if (newCompanies.length < _itemsPerPage) {
           _hasMore = false;
@@ -95,6 +125,7 @@ class _CompaniesPageState extends State<CompaniesPage> {
       _currentPage = 1;
       _companies.clear();
       _hasMore = true;
+      _searchController.clear();
     });
     await _loadCompanies();
   }
@@ -109,7 +140,8 @@ class _CompaniesPageState extends State<CompaniesPage> {
             style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 20,
-                color: Colors.white)),
+                color: Colors.white)
+        ),
         centerTitle: true,
         elevation: 0,
         flexibleSpace: Container(
@@ -145,6 +177,12 @@ class _CompaniesPageState extends State<CompaniesPage> {
           child: CustomScrollView(
             controller: _scrollController,
             slivers: [
+              SliverPadding(
+                padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+                sliver: SliverToBoxAdapter(
+                  child: _buildSearchField(),
+                ),
+              ),
               if (_companies.isEmpty && !_isLoading)
                 SliverFillRemaining(
                   child: Center(
@@ -180,6 +218,34 @@ class _CompaniesPageState extends State<CompaniesPage> {
                   ),
                 ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSearchField() {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 12),
+        child: TextField(
+          controller: _searchController,
+          decoration: InputDecoration(
+            hintText: 'Pretraga po nazivu...',
+            border: InputBorder.none,
+            prefixIcon: Icon(Icons.search, color: Colors.grey.shade600),
+            suffixIcon: _searchQuery.isNotEmpty
+                ? IconButton(
+              icon: Icon(Icons.clear, color: Colors.grey.shade600),
+              onPressed: () {
+                _searchController.clear();
+              },
+            )
+                : null,
           ),
         ),
       ),
