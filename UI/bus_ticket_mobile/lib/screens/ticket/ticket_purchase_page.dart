@@ -88,8 +88,6 @@ class _TicketPurchasePageState extends State<TicketPurchasePage> {
     busySeatsReturnLine = widget.returnRoute?.busySeats ?? [];
     numberOfSeatsReturnLine = widget.returnRoute?.numberOfSeats ?? 0;
 
-    print(busySeatsReturnLine);
-    print(numberOfSeatsReturnLine);
     _addPassenger();
   }
 
@@ -183,7 +181,6 @@ class _TicketPurchasePageState extends State<TicketPurchasePage> {
         ),
       ),
     ).then((value) {
-      print("value");
       print(value);
     }).onError((error, stackTrace) {
       print(error);
@@ -194,7 +191,6 @@ class _TicketPurchasePageState extends State<TicketPurchasePage> {
       //    )
       //);
     });
-    print('I am here 2');
 
     try {
       await Stripe.instance.presentPaymentSheet();
@@ -228,7 +224,6 @@ class _TicketPurchasePageState extends State<TicketPurchasePage> {
           //dateTimeRoundTrip: widget.dateTimeRoundTrip,
       );
 
-      print(ticket.toJson());
       await _ticketsProvider.insert(ticket);
 
       Navigator.of(context).push(
@@ -237,7 +232,6 @@ class _TicketPurchasePageState extends State<TicketPurchasePage> {
         ),
       );
     } catch (e) {
-      print('Error: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Greška pri plaćanju: $e'),
@@ -335,7 +329,6 @@ class _TicketPurchasePageState extends State<TicketPurchasePage> {
                     decoration: const InputDecoration(
                       labelText: 'Broj telefona*',
                       border: OutlineInputBorder(),
-                      hintText: '061234567',
                     ),
                     keyboardType: TextInputType.phone,
                     inputFormatters: [
@@ -429,7 +422,14 @@ class _TicketPurchasePageState extends State<TicketPurchasePage> {
             const SizedBox(height: 16),
 
             if (widget.returnRoute != null)
-              _buildBusSeatLayout(numberOfSeatsReturnLine, busySeatsReturnLine, selectedSeatsReturnLine),
+              Column(
+                children: [
+                  Divider(),
+                  Center(child: Text("Sjedište u povratku")),
+                  _buildBusSeatLayout(numberOfSeatsReturnLine, busySeatsReturnLine, selectedSeatsReturnLine),
+                ],
+              ),
+
 
 
             // Total summary
@@ -574,6 +574,9 @@ class _TicketPurchasePageState extends State<TicketPurchasePage> {
         border: const OutlineInputBorder(),
       ),
       onChanged: onChanged,
+      inputFormatters: [
+        FilteringTextInputFormatter.allow(RegExp(r'[a-zA-ZšđčćžŠĐČĆŽ\s]')),
+      ],
     );
   }
 

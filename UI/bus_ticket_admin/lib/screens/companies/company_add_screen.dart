@@ -9,6 +9,7 @@ import 'package:bus_ticket_admin/providers/companies_provider.dart';
 import 'package:bus_ticket_admin/providers/enum_provider.dart';
 import 'package:bus_ticket_admin/screens/companies/company_list_screen.dart';
 import 'dart:io';
+import 'package:flutter/services.dart';
 
 import 'package:bus_ticket_admin/widgets/master_screen.dart';
 
@@ -218,18 +219,53 @@ class _CompanyAddScreenState extends State<CompanyAddScreen> {
 
   Widget _buildInput(
       TextEditingController controller, String label, IconData icon) {
+    bool isNumberField = label == 'Broj telefona' ||
+        label == 'Porezni broj' ||
+        label == 'Identifikacijski broj';
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: TextFormField(
         controller: controller,
+        keyboardType: isNumberField
+            ? TextInputType.number
+            : label == 'Email' ? TextInputType.emailAddress : TextInputType.text,
+        inputFormatters: isNumberField
+            ? [
+          FilteringTextInputFormatter.digitsOnly,
+          if (label == 'Porezni broj' || label == 'Identifikacijski broj')
+            LengthLimitingTextInputFormatter(13),
+        ]
+            : null,
         decoration: InputDecoration(
           labelText: label,
           prefixIcon: Icon(icon),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         ),
-        validator: (value) =>
-            value == null || value.isEmpty ? 'Unesite $label' : null,
+        validator: (value) {
+          if (value == null || value.isEmpty) {
+            return 'Unesite $label';
+          }
+
+          if (label == 'Porezni broj' || label == 'Identifikacijski broj') {
+            if (value.length != 13) {
+              return 'Mora sadržavati tačno 13 cifara';
+            }
+          }
+
+          if (label == 'Email') {
+            final emailRegex = RegExp(
+              r'^[a-zA-Z0-9.!#$%&’*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$',
+            );
+            if (!emailRegex.hasMatch(value)) {
+              return 'Unesite validnu email adresu';
+            }
+          }
+
+          return null;
+        },
       ),
     );
   }
+
 }

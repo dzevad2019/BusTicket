@@ -11,7 +11,6 @@ class DropdownProvider extends BaseProvider<ListItem> {
   List<ListItem> data = <ListItem>[];
 
   Future<List<ListItem>> getItems(String url) async {
-    print(BaseProvider.apiUrl);
     var uri = Uri.parse('${BaseProvider.apiUrl}/Dropdown/$url');
 
     var headers = Authorization.createHeaders();

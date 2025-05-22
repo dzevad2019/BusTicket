@@ -19,6 +19,8 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
   String? _errorMessage;
 
+  String name = "";
+
   @override
   void initState() {
     super.initState();
@@ -45,8 +47,13 @@ class _LoginScreenState extends State<LoginScreen> {
       bool result = await LoginProvider.login(
           AuthRequest(_usernameController.text, _passwordController.text));
 
-      if (result /* && LoginProvider.authResponse!.isAdministrator! */) {
-        Navigator.pushReplacementNamed(context, HomeScreen.routeName);
+      if (result) {
+        if (LoginProvider.authResponse!.isAdministrator!){
+          Navigator.pushReplacementNamed(context, HomeScreen.routeName);
+        }
+        else{
+          _errorMessage = "Niste ovlašteni da pristupite ovom dijelu sistema.\nKontaktirajte administratora.";
+        }
       } else {
         setState(() {
           _errorMessage = "Korisničko ime ili lozinka nisu ispravni";

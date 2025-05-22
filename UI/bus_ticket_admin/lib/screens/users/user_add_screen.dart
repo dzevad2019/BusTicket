@@ -137,7 +137,6 @@ class _UserAddScreenState extends State<UserAddScreen> {
       try {
 
         String message = "";
-        print(_user.toJson());
         _user.profilePhoto = null;
         if (widget.userId == null) {
           await _userProvider.insert(_user);

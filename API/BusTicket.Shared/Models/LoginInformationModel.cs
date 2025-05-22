@@ -8,6 +8,7 @@
         public bool IsActive { get; set; }
         public bool IsFirstLogin { get; set; }
         public bool IsClient { get; set; }
+        public bool IsAdministrator { get; set; }
         public bool VerificationSent { get; set; }
         public bool EmailConfirmed { get; set; }
         public string FirstName { get; set; } = default!;

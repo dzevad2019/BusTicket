@@ -57,6 +57,8 @@ namespace BusTicket.Api
             var loginInformation = _mapper.Map<LoginInformationModel>(user);
             loginInformation.Token = GenerateToken(user);
             loginInformation.UserId = user.Id;
+            loginInformation.IsClient = user.UserRoles.Any(x => x.RoleId == 2);
+            loginInformation.IsAdministrator = user.UserRoles.Any(x => x.RoleId == 1);
             return loginInformation;
         }
 

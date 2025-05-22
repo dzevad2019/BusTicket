@@ -74,7 +74,6 @@ class _CityListScreenState extends State<CityListScreen> {
       searchParams['CountryId'] = searchCountryId.toString();
     }
     var response = await _cityProvider?.getForPagination(searchParams);
-    print(response?.items[0]);
     setState(() {
       data = response?.items as List<City>;
     });

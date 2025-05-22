@@ -282,7 +282,7 @@ namespace BusTicket.Services.Services.ReportsService
                                 footer.Cell().ColumnSpan(6).Background(Colors.DeepPurple.Lighten1).Padding(5)
                                       .Text("PROSJEČNA POPUNJENOST").SemiBold();
                                 footer.Cell().Background(Colors.DeepPurple.Lighten1).Padding(5)
-                                      .AlignRight().Text(data.Average(x => x.OccupancyRate).ToString("0.00") + "%").SemiBold();
+                                      .AlignRight().Text((data.Count > 0 ? data.Average(x => x.OccupancyRate).ToString("0.00") : "0.00") + "%").SemiBold();
                             });
                         });
                     });
