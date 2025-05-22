@@ -19,7 +19,6 @@ class LoginProvider {
     if (response.statusCode == 200) {
       var data = json.decode(response.body);
       authResponse = AuthResponse.fromJson(data);
-      print(authResponse!.isClient);
 
       //if(authResponse != null && !authResponse!.isClient!)
       //  {

@@ -39,7 +39,6 @@ class BusLine {
   });
 
   factory BusLine.fromJson(Map<String, dynamic> json) {
-    print(json);
     return BusLine(
       id: json['id'],
       name: json['name'] ?? '',

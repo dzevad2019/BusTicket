@@ -34,7 +34,6 @@ abstract class BaseProvider<T> with ChangeNotifier {
   }
 
   Future<ApiResponse<T>> getForPagination(Map<String, String>? params) async {
-    print(params);
     var uri = Uri.parse('$apiUrl/$endpoint/GetPaged');
     if (params != null) {
       uri = uri.replace(queryParameters: params);
@@ -153,11 +152,8 @@ abstract class BaseProvider<T> with ChangeNotifier {
       var response = await request.send();
 
       if (response.statusCode == 200) {
-        print('Uspješan odgovor: ${await response.stream.bytesToString()}');
         return true;
       } else {
-        print('Neuspješan odgovor: ${await response.stream.bytesToString()}');
-        print(response.request);
         return false;
       }
     } catch (error, stackTrace) {

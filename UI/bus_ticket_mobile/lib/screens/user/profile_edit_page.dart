@@ -1,9 +1,11 @@
 import 'package:bus_ticket_mobile/models/listItem.dart';
 import 'package:bus_ticket_mobile/models/user_upsert_model.dart';
+import 'package:bus_ticket_mobile/providers/base_provider.dart';
 import 'package:bus_ticket_mobile/providers/dropdown_provider.dart';
 import 'package:bus_ticket_mobile/providers/users_provider.dart';
 import 'package:bus_ticket_mobile/utils/authorization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:convert';
 import 'package:provider/provider.dart';
@@ -72,7 +74,6 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
       _selectedGender = genders.isNotEmpty ? genders.firstWhere((x) => x.key == response.gender) : null;
       _networkProfilePhoto = response.profilePhoto;
       _enableNotificationEmail = response.enableNotificationEmail;
-      print(_networkProfilePhoto);
       _isLoading = false;
     });
   }
@@ -212,6 +213,7 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         child: Form(
+          autovalidateMode: AutovalidateMode.onUserInteraction,
           key: _formKey,
           child: _isLoading
               ? Center(child: CircularProgressIndicator(strokeWidth: 2, color: Colors.purple))
@@ -228,7 +230,7 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                     backgroundImage: _profilePhoto != null
                         ? MemoryImage(base64Decode(_profilePhoto!))
                         : (_networkProfilePhoto != null && _networkProfilePhoto!.isNotEmpty
-                        ? NetworkImage("https://10.0.2.2:7297/${_networkProfilePhoto!}")
+                        ? NetworkImage("${BaseProvider.apiUrl}/${_networkProfilePhoto!}")
                         : null) as ImageProvider?,
                     child: (_profilePhoto == null &&
                         (_networkProfilePhoto == null || _networkProfilePhoto!.isEmpty))
@@ -251,6 +253,9 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                       controller: _firstNameController,
                       label: 'Ime',
                       icon: Icons.person_outline,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(RegExp(r'[a-zA-ZšđčćžŠĐČĆŽ\s]')),
+                      ],
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Molimo unesite vaše ime';
@@ -268,6 +273,9 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                       controller: _lastNameController,
                       label: 'Prezime',
                       icon: Icons.person_outline,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(RegExp(r'[a-zA-ZšđčćžŠĐČĆŽ\s]')),
+                      ],
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Molimo unesite vaše prezime';
@@ -302,7 +310,7 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                     return 'Molimo unesite vaš broj telefona';
                   }
                   if (!RegExp(r'^[0-9+]+$').hasMatch(value)) {
-                    return 'Broj telefona može sadržavati samo brojeve i +';
+                    return 'Broj telefona može sadržavati samo brojeve';
                   }
                   if (value.length < 8) {
                     return 'Broj telefona mora imati najmanje 8 cifara';
@@ -314,46 +322,50 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
 
               Row(
                 children: [
-                  Expanded(
+                    Expanded(
                     child: InkWell(
-                      onTap: () => _selectDate(context),
-                      borderRadius: BorderRadius.circular(12),
-                      child: InputDecorator(
-                        decoration: InputDecoration(
-                          labelText: 'Datum rođenja',
-                          prefixIcon: Icon(Icons.calendar_today_outlined,
-                              color: theme.colorScheme.onSurface.withOpacity(0.6)),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: theme.dividerColor),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12), // Reduced padding
-                          isDense: true, // Makes the field more compact
+                    onTap: () => _selectDate(context),
+                    borderRadius: BorderRadius.circular(12),
+                    child: InputDecorator(
+                      decoration: InputDecoration(
+                        labelText: 'Datum rođenja',
+                        prefixIcon: Icon(
+                          Icons.calendar_today_outlined,
+                          color: theme.colorScheme.onSurface.withOpacity(0.6),
                         ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Flexible( // Added Flexible to prevent overflow
-                              child: Text(
-                                _birthDate != null
-                                    ? '${_birthDate!.day}.${_birthDate!.month}.${_birthDate!.year}'
-                                    : 'Odaberite datum',
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: _birthDate != null
-                                      ? theme.textTheme.bodyMedium?.color
-                                      : theme.textTheme.bodyMedium?.color?.withOpacity(0.6),
-                                ),
-                                overflow: TextOverflow.ellipsis, // Handle overflow with ellipsis
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: theme.dividerColor),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+                        isDense: true,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              _birthDate != null
+                                  ? '${_birthDate!.day.toString().padLeft(2, '0')}.${_birthDate!.month.toString().padLeft(2, '0')}.${_birthDate!.year}'
+                                  : 'Odaberite datum',
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: _birthDate != null
+                                    ? theme.textTheme.bodyMedium?.color
+                                    : theme.textTheme.bodyMedium?.color?.withOpacity(0.6),
                               ),
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            const SizedBox(width: 8), // Reduced spacing
-                            Icon(Icons.arrow_drop_down,
-                                color: theme.colorScheme.onSurface.withOpacity(0.6),
-                                size: 20), // Smaller icon
-                          ],
-                        ),
+                          ),
+                          const SizedBox(width: 8),
+                          Icon(
+                            Icons.arrow_drop_down,
+                            color: theme.colorScheme.onSurface.withOpacity(0.6),
+                            size: 20,
+                          ),
+                        ],
                       ),
                     ),
+                  ),
                   ),
                   const SizedBox(width: 12), // Slightly reduced spacing
                   Expanded(
@@ -606,6 +618,7 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
     int maxLines = 1,
     TextInputType? keyboardType,
     String? Function(String?)? validator,
+    List<TextInputFormatter>? inputFormatters
   }) {
     final theme = Theme.of(context);
 
@@ -644,6 +657,7 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
       maxLines: maxLines,
       keyboardType: keyboardType,
       validator: validator,
+      inputFormatters: inputFormatters,
       style: theme.textTheme.bodyMedium?.copyWith(
         color: enabled ? theme.textTheme.bodyMedium?.color : theme.textTheme.bodyMedium?.color?.withOpacity(0.6),
       ),

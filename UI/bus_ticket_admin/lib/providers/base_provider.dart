@@ -43,7 +43,7 @@ abstract class BaseProvider<T> with ChangeNotifier {
 
     if (response.statusCode == 200) {
       var data = json.decode(response.body);
-      print(data);
+
       List<T> items = data['items'].map<T>((d) => fromJson(d)).toList();
       int totalCount = data['totalCount'];
       return ApiResponse<T>(items: items, totalCount: totalCount);

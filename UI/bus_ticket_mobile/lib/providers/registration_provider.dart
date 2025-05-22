@@ -12,9 +12,7 @@ class RegistrationProvider with ChangeNotifier {
     var uri = Uri.parse('${Constants.apiUrl}/api/Access/Registration');
     Map<String, String> headers = Authorization.createHeaders();
     try {
-      print(resource);
       var jsonRequest = jsonEncode(resource);
-      print(jsonRequest);
 
       var response = await http.post(uri, headers: headers, body: jsonRequest);
       if (response.statusCode == 200) {

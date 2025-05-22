@@ -6,10 +6,8 @@ import 'package:bus_ticket_mobile/utils/notification_handler.dart';
 import 'package:bus_ticket_mobile/utils/signalr_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:openid_client/openid_client_io.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:provider/provider.dart';
 import '../../models/auth_request.dart';
 import '../../providers/login_provider.dart';
 
@@ -89,7 +87,6 @@ class _LoginScreenState extends State<LoginScreen> {
         await signalRService.joinGroup('user_${Authorization.id}');
 
         signalRService.registerNotificationHandler((notification) async {
-          print('Received notification: $notification');
           await handler.showNotification(notification);
         });
 
@@ -102,7 +99,6 @@ class _LoginScreenState extends State<LoginScreen> {
         });
       }
     } catch (e) {
-      print(e);
       setState(() {
         _errorMessage = "Došlo je do greške. Pokušajte ponovo.";
       });
@@ -114,10 +110,6 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
-    //_usernameController.text = "bus.client@busticket.ba";
-    //_passwordController.text = "Test1234";
-
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(

@@ -13,7 +13,6 @@ class CompaniesProvider extends BaseProvider<Company> {
 
   @override
   Company fromJson(data) {
-    print(data);
     return Company.fromJson(data);
   }
 }

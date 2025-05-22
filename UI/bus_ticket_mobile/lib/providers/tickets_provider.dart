@@ -15,7 +15,6 @@ class TicketsProvider extends BaseProvider<Ticket> {
   }
 
   Future<ApiResponse<Ticket>> getMyTickets(Map<String, String>? params) async {
-    print(params);
     var uri = Uri.parse('${BaseProvider.apiUrl}/$endpoint/GetUserTickets');
     if (params != null) {
       uri = uri.replace(queryParameters: params);

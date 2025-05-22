@@ -153,7 +153,6 @@ class _HomePageState extends State<HomePage> {
     if (mounted) {
       setState(() {
         busStops = response ?? [];
-        print(busStops.length);
         filteredBusStops = List.from(busStops);
       });
     }

@@ -147,7 +147,6 @@ class _BusOccupancyReportPageState extends State<BusOccupancyReportPage> {
         );
       }
     } catch (e) {
-      throw e;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Greška pri preuzimanju: ${e.toString()}')),
       );
